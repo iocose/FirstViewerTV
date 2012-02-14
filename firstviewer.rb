@@ -53,7 +53,7 @@ class FirstViewer
       if json['feed'].has_key?('entry')
         self.storeVideo(json['feed']['entry'])
       end
-    rescue Timeout::Error => e
+    rescue Exception => e
       @log.warn e.to_s + url 
     end
   end
