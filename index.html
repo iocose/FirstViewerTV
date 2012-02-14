@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>First Viewer Television</title>
+  <link rel="stylesheet" type="text/css" href="css/firstviewer.css" />
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.3/jquery.min.js"></script>
+  <script type="text/javascript" src="http://vhx.tv/javascripts/jquery.swfobject-1.1.1.js"></script>
+
+
+</head>
+<body>
+<div id="vhx_megaplaya"></div>
+<script type="text/javascript">
+  $(document).ready(
+    function() {
+      win_width = ($(window).width()-4);
+      win_height = ($(window).height()-4);
+      $('#vhx_megaplaya').flash({
+        swf: 'http://vhx.tv/embed/megaplaya.swf',
+        width: win_width,
+        allowFullScreen: true,
+        allowScriptAccess: "always",
+        height: win_height
+      });
+    }
+  );
+
+  // Megaplaya calls this function when it's ready
+  var megaplaya = false;
+  function megaplaya_loaded(){
+    megaplaya = $('#vhx_megaplaya').children()[0];
+    megaplaya_addListeners();
+    load_videos();
+  }
+
+  function megaplaya_addListeners(){
+    var events = ['onVideoFinish', 'onVideoLoad', 'onPlay'];
+    $.each(events, function(index, value) {
+    	megaplaya.api_addListener(value, "function() { megaplaya_callback('" + value + "', arguments); }")
+    });
+  }
+
+  function megaplaya_callback(event_name, args){
+		current = megaplaya.api_getCurrentVideoIndex()
+		if(current == $tot_videos){
+  		var promise = load_videos();
+			promise.success(function(videos, status, ajax) {
+							megaplaya.api_playQueue(videos);
+			});
+		}
+  }
+
+  function load_videos(){
+    return $.ajax({
+      type: "GET",
+      url: "http://iocose.org/apis/firstview.json",
+      dataType: "jsonp",
+      jsonpCallback: "tv",
+      success: function(videos, status, ajax) {
+      if (videos) {
+        megaplaya.api_playQueue(videos);
+	  	$tot_videos = (videos.length)-1;
+        }
+      }
+     });
+  }
+
+</script>
+</body>
+</html>

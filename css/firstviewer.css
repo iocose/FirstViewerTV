@@ -1,0 +1,12 @@
+html{
+	height: 100%;
+    background-color:black;
+}
+body{
+	height: 100%;
+	margin: 0px;
+}
+#vhx_megaplaya{
+	position:relative;
+	height: 100%;
+}
