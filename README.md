@@ -4,6 +4,8 @@ The First Viewer Television is a webpage where the visitor who watch the youtube
 
 View it online: <http://www.iocose.org/FirstViewerTV>
 
+## How it works
+
 The VHX player <http://dev.vhx.tv/video-player.html> read the IOCOSE's firstview API <http://www.iocose.org/apis/firstview.json> generated every 20 minutes by the script firstviewer.rb
 
 ## Author
