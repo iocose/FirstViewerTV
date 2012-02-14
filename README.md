@@ -6,11 +6,11 @@ View it online: <http://www.iocose.org/FirstViewerTV>
 
 ## How it works
 
-The VHX player <http://dev.vhx.tv/video-player.html> read the IOCOSE's firstview API <http://www.iocose.org/apis/firstview.json> generated every 20 minutes by the script firstviewer.rb
+The VHX player <http://dev.vhx.tv/video-player.html> reads the IOCOSE's firstview API <http://www.iocose.org/apis/firstview.json> generated every 20 minutes by the script firstviewer.rb
 
 ## Author
 
-* [IOCOSE](http://iocose.org)
+[IOCOSE](http://iocose.org)
 
 ## License
 
