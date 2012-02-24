@@ -77,7 +77,3 @@ class FirstViewer
     end
   end
 end
-
-g = FirstViewer.new()
-g.search
-g.saveToFile
