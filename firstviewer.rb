@@ -7,14 +7,16 @@ require 'open-uri'
 class FirstViewer
   def initialize ()
     #logger
-    @log = Logger.new('/yourpath/firstview.log','daily')		    
+    #@log = Logger.new('/yourpath/firstview.log','daily')		    
+    @log = Logger.new('firstview.log','daily')		    
     @log.datetime_format = "%Y-%m-%d %H:%M:%S"
     #youtube API standard feed
     @api_url = "https://gdata.youtube.com/feeds/api/standardfeeds/"
     #most recent feed 
     @most_recent = "/most_recent_"
     #path of the json output file
-    @output_path = '/yourpath/apis/firstview.json'
+    #@output_path = '/yourpath/apis/firstview.json'
+    @output_path = 'firstview.json'
     #API version 2, output in json format
     @json = "?v=2&alt=json&prettyprint=true"
     #available nations on the youtube standard feed    		
@@ -40,6 +42,7 @@ class FirstViewer
     @nations.each do |n|
       @categories.each do |c|
         url = "#{@api_url}" + n + "#{@most_recent}" + c + "#{@json}#{@select_zero_views}#{@required_fields}"
+        puts url
         self.readUrl(url)
       end
     end
