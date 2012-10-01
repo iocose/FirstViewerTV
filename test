@@ -1,4 +1,0 @@
-https://gdata.youtube.com/feeds/api/standardfeeds/ SG/most_recent_Entertainment?v=2&alt=json&prettyprint=true(title,media:group(media:player(@url)))
-https://gdata.youtube.com/feeds/api/standardfeeds/BG/most_recent_Entertainment?v=2&alt=json&prettyprint=true(title,media:group(media:player(@url)))
-https://gdata.youtube.com/feeds/api/standardfeeds/UA/most_recent_Entertainment?v=2&alt=json&prettyprint=true(title,media:group(media:player(@url)))
-https://gdata.youtube.com/feeds/api/standardfeeds/NZ/most_recent_Entertainment?v=2&alt=json&prettyprint=true(title,media:group(media:player(@url)))
