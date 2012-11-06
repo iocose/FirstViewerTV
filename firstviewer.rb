@@ -38,7 +38,7 @@ class FirstViewer
     @nations.shuffle!
     @nations.each do |n|
       @categories.each do |c|
-        url = "#{@api_url}" + n + "#{@most_recent}" + c + "#{@json}#{@select_zero_views}#{@required_fields}"
+        url = "#{@api_url}" + n + "#{@most_recent}" + c + "#{@json}#{@required_fields}"
         self.readUrl(url)
       end
     end
