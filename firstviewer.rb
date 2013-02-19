@@ -17,12 +17,12 @@ class FirstViewer
     @output_path = '/yourpath/apis/firstview.json'
     #API version 2, output in json format
     @json = "?v=2&alt=json&prettyprint=true"
-    @nations =['AE','AR','AU','BD','BE','BG','BR','CA','CL','CO','CZ','DE','DK',
-                'DZ','EE','EG','ES','ET','FI','FR','GB','GH','GR','HK','HR','HU',
-                'ID','IE', 'IL','IN','IR','IS','IT','JO','JP','KE','KR','LT',
-                'LV','MA','MX','MY','NG','NL','NO','NZ','PE','PH','PK','PL','PT',
-                'RO','RS','RU','SA','SE',' SG','SI','SK','SN','TH','TN','TR','TW',
-                'TZ','UA','UG','US','VN','YE','ZA']
+    @nations =['AE','AR','AU','BD','BE','BR','CA','CL','CO','CZ','DE','DK',
+                'DZ','EG','ES','ET','FR','GB','GH','GR','HK','HR','HU',
+                'ID','IE','IL','IN','IS','IT','JO','JP','KE','KR','LT',
+                'LV','MA','MX','MY','NG','NL','NZ','PE','PH','PK','PL',
+                'RO','RU','SA','SE','SG','SK','SN','TN','TR','TW',
+                'UA','UG','US','YE','ZA']
     #categories available for the standard feed
     @categories = ['Comedy', 'People', 'Entertainment', 'Music', 'Howto',
                   'Sports', 'Autos', 'Education', 'Film', 'News', 'Animals',
