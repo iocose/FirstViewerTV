@@ -2,7 +2,7 @@
 
 The First Viewer Television is a webpage where the visitor who watches the youtube's videos is the first viewer, because all the videos showed are videos with 0 views.
 
-View it online: <http://www.firstview.tv>
+View it online: <http://www.firstviewer.tv>
 
 ## How it works
 
