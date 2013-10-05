@@ -1,3 +1,6 @@
 .rvmrc
-firstview.log
-firstview.json
+.ruby-version
+firstviewer.log
+firstviewer.log.*
+firstviewer.json
+DEVELOPER_KEY

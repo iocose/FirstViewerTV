@@ -1,89 +1,140 @@
 #/usr/bin/ruby
 require 'rubygems'
-require 'json'
-require 'logger'
+require 'google/api_client'
+require 'trollop'
 require 'open-uri'
+require 'logger'
+
+DEVELOPER_KEY = contents = File.open('DEVELOPER_KEY', 'r') { |f| f.read }
+YOUTUBE_API_SERVICE_NAME = 'youtube'
+YOUTUBE_API_VERSION = 'v3'
+
+APPLICATION_NAME = "yourub"
+APPLICATION_VERSION = "0.1"
 
 class FirstViewer
   def initialize ()
-    #logger
-    @log = Logger.new('/yourpath/firstview.log','daily')		    
+    @log = Logger.new('firstviewer.log','daily')		    
     @log.datetime_format = "%Y-%m-%d %H:%M:%S"
-    #youtube API standard feed
-    @api_url = "https://gdata.youtube.com/feeds/api/standardfeeds/"
-    #most recent feed 
-    @most_recent = "/most_recent_"
-    #path of the json output file
-    @output_path = '/yourpath/apis/firstview.json'
-    #API version 2, output in json format
-    @json = "?v=2&alt=json&prettyprint=true"
     @nations =['AE','AR','AU','BD','BE','BR','CA','CL','CO','CZ','DE','DK',
                 'DZ','EG','ES','ET','FR','GB','GH','GR','HK','HR','HU',
                 'ID','IE','IL','IN','IS','IT','JO','JP','KE','KR','LT',
                 'LV','MA','MX','MY','NG','NL','NZ','PE','PH','PK','PL',
                 'RO','RU','SA','SE','SG','SK','SN','TN','TR','TW',
                 'UA','UG','US','YE','ZA']
-    #categories available for the standard feed
-    @categories = ['Comedy', 'People', 'Entertainment', 'Music', 'Howto',
-                  'Sports', 'Autos', 'Education', 'Film', 'News', 'Animals',
-                  'Tech', 'Travel','Games']
-    #take only title and youtube url
-    #https://developers.google.com/youtube/2.0/developers_guide_protocol#Fields_Formatting_Rules
-    @required_fields = "(title,media:group(media:player(@url)))"
+    #in the API v3 the regionCode seems to be ignored, we define US as default
+    @nation = 'US'
+    @categories = retrieve_categories
+    @options = default_search_options
     @videos = Array.new
+    self.search
+  end
+
+  def client
+    @client ||= Google::APIClient.new(
+      :key => DEVELOPER_KEY,
+      :application_name => APPLICATION_NAME,
+      :application_version => APPLICATION_VERSION, 
+      :authorization => nil,
+    )
+  end
+
+  def youtube
+    youtube = self.client.discovered_api(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION)
+  end
+
+  def categories_request
+    categories_list = self.client.execute!(
+      :api_method => youtube.video_categories.list,
+      :parameters => {"part" => "snippet","regionCode" => @nation }
+    )
+  end
+
+  def retrieve_categories
+    categories = []
+    self.categories_request.data.items.each do |cat_result|
+      categories.push cat_result["id"]
+    end
+    return categories
+  end
+
+  def default_search_options
+    opts = Trollop::options do
+      opt :maxResults, 'Max results', :type => :int, :default => 20
+      opt :regionCode, 'Nation', :type => String, :default => 'US'
+      opt :type, 'Type', :type => String, :default => 'video'
+      opt :order, 'Order', :type => String, :default => 'date'
+      opt :safeSearch, 'Safe Search', :type => String, :default => 'none'
+      opt :videoCategoryId, 'Video Category Id', :type => String, :default => '10'
+      #opt :publishedAfter, 'Start date, in YYYY-MM-DD format', :type => String, :default => one_day_ago
+    end
   end
 
   def search
     @log.info('initialize') { "Starting research..." }
-    @nations.shuffle!
-    @nations.each do |n|
-      @categories.each do |c|
-        url = "#{@api_url}" + n + "#{@most_recent}" + c + "#{@json}#{@required_fields}"
-        self.readUrl(url)
+    #@nations.shuffle!
+    #@nations.each do |n|
+      @categories.each do |category_id|
+        @options[:videoCategoryId] = category_id
+        @options[:part] = 'id'
+        search_response = client.execute!(
+          :api_method => youtube.search.list,
+          :parameters => @options
+        )
+        self.read_response search_response
       end
+    #end
+  end
+
+  def read_response(search_response)
+    search_response.data.items.each do |search_result|
+      get_videos_info search_result.id.videoId
     end
   end
 
-  def readUrl(url)
-    url = URI.encode(url)
+  def get_videos_info(result_video_id)
+    fields = 'items(snippet(title,thumbnails),statistics(viewCount))'
+
+    parameters = {
+      :id => result_video_id, 
+      :part => 'statistics,snippet',
+      :fields => URI::encode(fields)
+    }
+
+    video_response = client.execute!(
+      :api_method => youtube.videos.list,
+      :parameters => parameters
+    )
+    store_video(result_video_id, video_response)
+  end
+
+  def store_video(video_id, video_response)
     begin
-      page = open(url, :read_timeout => 6).read
-      json = JSON.parse(page)
-      json['feed']['entry'].each do |v|
-        #videos with 0views have no tags <yt:statistics>
-        #https://developers.google.com/youtube/2.0/reference#youtube_data_api_tag_yt:statistics
-        zero_view = v['yt$statistics'] 
-        if (zero_view.nil?)
-          self.storeVideo(v)
-        end
+    result = JSON.parse(video_response.data.to_json) 
+    entry = result['items'].first
+    n_view = entry['statistics']['viewCount'].to_i
+    if n_view == 0 || entry['statistics'].nil?
+      puts video_id
+      video_url = 'https://www.youtube.com/watch?v='<< video_id
+      video_title = entry['snippet']['title']
+      @videos.push({'title' => video_title, 'url' => video_url})
     end
-
-    rescue Timeout::Error => e
-      @log.warn e.to_s + url 
-    rescue OpenURI::HTTPError => e
-      @log.warn e.to_s + url 
+    rescue
+      @log.error "impossible to retrieve the video"
     end
   end
 
-  def storeVideo(entry)
-    #check if there is media player tag
-    if entry['media$group'].has_key?('media$player')
-      videourl = entry['media$group']['media$player']['url']
-      videotitle = entry['title']['$t']
-      @videos.push({'title' => videotitle, 'url' => videourl})
-    end
-  end
-
-  def saveToFile
-    if File.exist?(@output_path)
+  def save_to_file(file_path)
+    if File.exist?(file_path)
       @log.info "Found #{ @videos.length } videos."
       #adding tv callback for jsonp
       @videos = "tv(" + @videos.to_json + ")";
-      File.open(@output_path,"w") do |f|
+      File.open(file_path,"w") do |f|
         f.write(@videos)
       end
     else
       @log.error "the file doesnt exists"
     end
   end
+
 end
