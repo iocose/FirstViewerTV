@@ -92,18 +92,20 @@ class FirstViewer
     end
   end
 
-  def get_videos_info(result_video_id)
+  def video_params(result_video_id)
     fields = 'items(snippet(title,thumbnails),statistics(viewCount))'
-
     parameters = {
       :id => result_video_id, 
       :part => 'statistics,snippet',
       :fields => URI::encode(fields)
     }
+  end
 
+  def get_videos_info(result_video_id)
+    params = self.video_params(result_video_id)
     video_response = client.execute!(
       :api_method => youtube.videos.list,
-      :parameters => parameters
+      :parameters => params
     )
     store_video(result_video_id, video_response)
   end
