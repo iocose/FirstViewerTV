@@ -5,7 +5,7 @@ require 'trollop'
 require 'open-uri'
 require 'logger'
 
-DEVELOPER_KEY = contents = File.open('DEVELOPER_KEY', 'r') { |f| f.read }
+DEVELOPER_KEY = File.open('DEVELOPER_KEY', 'r') { |f| f.read }
 YOUTUBE_API_SERVICE_NAME = 'youtube'
 YOUTUBE_API_VERSION = 'v3'
 
