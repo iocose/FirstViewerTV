@@ -1,16 +1,11 @@
 #/usr/bin/ruby
 require 'rubygems'
-require 'google/api_client'
-require 'trollop'
+require 'google/apis/youtube_v3'
+require 'optimist'
 require 'open-uri'
 require 'logger'
 
 DEVELOPER_KEY = File.open('DEVELOPER_KEY', 'r') { |f| f.read }
-YOUTUBE_API_SERVICE_NAME = 'youtube'
-YOUTUBE_API_VERSION = 'v3'
-
-APPLICATION_NAME = "yourub"
-APPLICATION_VERSION = "0.1"
 
 class FirstViewer
   def initialize ()
@@ -31,35 +26,43 @@ class FirstViewer
   end
 
   def client
-    @client ||= Google::APIClient.new(
-      :key => DEVELOPER_KEY,
-      :application_name => APPLICATION_NAME,
-      :application_version => APPLICATION_VERSION, 
-      :authorization => nil,
-    )
-  end
-
-  def youtube
-    youtube = self.client.discovered_api(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION)
+    @client ||= begin
+      service = Google::Apis::YoutubeV3::YouTubeService.new
+      service.key = DEVELOPER_KEY
+      service
+    end
   end
 
   def categories_request
-    categories_list = self.client.execute!(
-      :api_method => youtube.video_categories.list,
-      :parameters => {"part" => "snippet","regionCode" => @nation }
-    )
+    client.list_video_categories('snippet', region_code: @nation)
   end
 
+  # def retrieve_categories
+  #   categories = []
+  #   self.categories_request.data.items.each do |cat_result|
+  #     categories.push cat_result["id"]
+  #   end
+  #   return categories
+  # end
+  #
+
   def retrieve_categories
-    categories = []
-    self.categories_request.data.items.each do |cat_result|
-      categories.push cat_result["id"]
+    cache_file = 'categories_cache.json'
+    if File.exist?(cache_file)
+      return JSON.parse(File.read(cache_file))
     end
-    return categories
+
+    categories = []
+    categories_request.items.each do |cat_result|
+      categories << cat_result.id
+    end
+  
+    File.write(cache_file, categories.to_json)
+    categories
   end
 
   def default_search_options
-    opts = Trollop::options do
+    opts = Optimist::options do
       opt :maxResults, 'Max results', :type => :int, :default => 20
       opt :regionCode, 'Nation', :type => String, :default => 'US'
       opt :type, 'Type', :type => String, :default => 'video'
@@ -74,46 +77,46 @@ class FirstViewer
     @log.info('initialize') { "Starting research..." }
     #@nations.shuffle!
     #@nations.each do |n|
-      @categories.each do |category_id|
+      # we are getting out of usage quota. Sample just two categories
+      #@categories.each do |category_id|
+      @categories.sample(2).each do |category_id|
         @options[:videoCategoryId] = category_id
         @options[:part] = 'id'
-        search_response = client.execute!(
-          :api_method => youtube.search.list,
-          :parameters => @options
-        )
+        search_response = client.list_searches('id', @options)
         self.read_response search_response
       end
     #end
   end
 
   def read_response(search_response)
-    search_response.data.items.each do |search_result|
-      get_videos_info search_result.id.videoId
+    search_response.items.each do |search_result|
+      next unless search_result.id&.video_id
+      get_videos_info search_result.id.video_id
     end
   end
 
   def video_params(result_video_id)
-    fields = 'items(snippet(title,thumbnails),statistics(viewCount))'
-    parameters = {
-      :id => result_video_id, 
-      :part => 'statistics,snippet',
-      :fields => URI::encode(fields)
+    {
+      id: result_video_id,
+      fields: 'items(snippet(title,thumbnails),statistics(viewCount))'
     }
   end
 
   def get_videos_info(result_video_id)
-    params = self.video_params(result_video_id)
-    video_response = client.execute!(
-      :api_method => youtube.videos.list,
-      :parameters => params
-    )
+    params = video_params(result_video_id)
+    video_response = client.list_videos('snippet,statistics', **params)
     store_video(result_video_id, video_response)
   end
 
   def store_video(video_id, video_response)
     begin
-    result = JSON.parse(video_response.data.to_json) 
+    result = JSON.parse(video_response.to_json)
     entry = result['items'].first
+
+    if entry['statistics'].nil?
+      return
+    end
+
     n_view = entry['statistics']['viewCount'].to_i
     if n_view == 0 || entry['statistics'].nil?
       puts video_id
